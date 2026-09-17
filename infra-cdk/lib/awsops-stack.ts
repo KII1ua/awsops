@@ -222,6 +222,30 @@ export class AwsopsStack extends cdk.Stack {
       ],
     }));
 
+    // AgentCore 호출 권한 (설치 권한 아님 — 생성/삭제는 TempAgentCoreSetup으로 임시 부여)
+    // AgentCore *invoke* permissions. Without these every AI request silently falls back
+    // to plain Bedrock. Create/update/delete stay out of the instance role on purpose.
+    ec2Role.addToPolicy(new iam.PolicyStatement({
+      sid: 'AgentCoreRuntimeAccess',
+      actions: [
+        'bedrock-agentcore:InvokeAgentRuntime',
+        'bedrock-agentcore:StopRuntimeSession',
+        'bedrock-agentcore:StartCodeInterpreterSession',
+        'bedrock-agentcore:InvokeCodeInterpreter',
+        'bedrock-agentcore:StopCodeInterpreterSession',
+      ],
+      resources: [
+        `arn:aws:bedrock-agentcore:${this.region}:${this.account}:runtime/awsops_agent-*`,
+        `arn:aws:bedrock-agentcore:${this.region}:${this.account}:code-interpreter-custom/awsops_code_interpreter-*`,
+      ],
+    }));
+    // /agentcore 상태 페이지가 쓰는 조회 API / read-only calls behind the /agentcore status page
+    ec2Role.addToPolicy(new iam.PolicyStatement({
+      sid: 'AgentCoreReadStatus',
+      actions: ['bedrock-agentcore:Get*', 'bedrock-agentcore:List*'],
+      resources: ['*'],
+    }));
+
     // S3 report upload (diagnosis report PPTX → awsops-deploy bucket)
     ec2Role.addToPolicy(new iam.PolicyStatement({
       actions: ['s3:PutObject', 's3:GetObject'],
@@ -370,13 +394,17 @@ export class AwsopsStack extends cdk.Stack {
       'SVCEOF',
       'systemctl daemon-reload && systemctl enable code-server && systemctl start code-server',
       '',
-      '# nginx: /vscode 접두사 제거 중계 (ALB → 8889 → code-server 8888)',
+      // NOTE: user-data 문자열은 ASCII만 — CloudFormation이 비ASCII를 '?'로 저장해서
+      //       매 배포마다 UserData 변경(=EC2 중단/교체)으로 잡힌다.
+      // NOTE: keep user-data strings ASCII-only. CloudFormation stores non-ASCII as '?',
+      //       so every later deploy sees a UserData change and interrupts/replaces the instance.
+      '# nginx: strip the /vscode prefix and relay (ALB -> 8889 -> code-server 8888)',
       '# nginx path-stripping proxy for /vscode (ALB cannot strip path prefixes)',
       'dnf install -y nginx',
       "cat > /etc/nginx/conf.d/vscode-proxy.conf <<'NGEOF'",
       'server {',
       '    listen 8889;',
-      '    # 리다이렉트에 8889 포트가 붙으면 외부에서 접속 불가 → 상대 경로로 응답',
+      '    # a redirect carrying port 8889 is unreachable from outside -> answer with relative paths',
       '    # Without these, redirects leak the internal port 8889 and time out externally',
       '    absolute_redirect off;',
       '    port_in_redirect off;',

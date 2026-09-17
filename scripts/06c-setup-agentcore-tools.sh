@@ -222,7 +222,7 @@ for FUNC in "awsops-steampipe-query:steampipe_query" "awsops-istio-mcp:aws_istio
 
     # Copy source into pkg dir
     if [ "$HANDLER" = "aws_istio_mcp" ]; then
-        cp "$WORK_DIR/agent/lambda/aws_istio_mcp.py" /tmp/vpc-lambda-pkg/
+        cp "$WORK_DIR/agent/lambda/aws_istio_mcp.py" "$WORK_DIR/agent/lambda/cross_account.py" /tmp/vpc-lambda-pkg/
     fi
 
     cd /tmp/vpc-lambda-pkg
