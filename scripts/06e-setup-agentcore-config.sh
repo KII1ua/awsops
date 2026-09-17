@@ -150,7 +150,9 @@ import re
 with open('${AGENT_FILE}', 'r') as f:
     content = f.read()
 # '\"${GW_KEY}\"' 키의 URL을 새 URL로 교체 / Replace URL for this key
-pattern = r'(\"${GW_KEY}\":\s*\")https://[^\"]+(\",?)'
+# 줄 맨 앞의 딕셔너리 항목만 교체 — 주석 안의 예시 URL은 건드리지 않는다 (git pull 충돌 방지)
+# Only rewrite real dict entries at line start, never example URLs inside comments
+pattern = r'(?m)(^[ \t]*\"${GW_KEY}\":\s*\")https://[^\"]+(\",?)'
 replacement = r'\g<1>${NEW_URL}\g<2>'
 content = re.sub(pattern, replacement, content)
 with open('${AGENT_FILE}', 'w') as f:
