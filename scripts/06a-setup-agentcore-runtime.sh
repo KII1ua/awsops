@@ -98,6 +98,10 @@ run_or_fail "IAM put-role-policy (ECRAndLambda)" \
             \"Effect\": \"Allow\",
             \"Action\": [\"ecr:*\", \"lambda:InvokeFunction\", \"lambda:GetFunction\", \"bedrock-agentcore:*\"],
             \"Resource\": \"*\"
+        }, {
+            \"Effect\": \"Allow\",
+            \"Action\": [\"logs:CreateLogGroup\", \"logs:CreateLogStream\", \"logs:PutLogEvents\", \"logs:DescribeLogGroups\", \"logs:DescribeLogStreams\"],
+            \"Resource\": \"arn:aws:logs:*:*:log-group:/aws/bedrock-agentcore/runtimes/*\"
         }]
     }"
 
