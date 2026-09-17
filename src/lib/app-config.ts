@@ -122,6 +122,12 @@ export function getBedrockModelId(): string {
   return getConfig().bedrockModelId || DEFAULT_BEDROCK_MODEL_ID;
 }
 
+// 'global.anthropic.claude-sonnet-4-6' → 'sonnet-4.6' — UI 표시·비용 계산용 키 / short key for UI label and pricing
+export function getBedrockModelLabel(): string {
+  const m = getBedrockModelId().match(/claude-([a-z]+)-(\d+)-(\d+)/);
+  return m ? `${m[1]}-${m[2]}.${m[3]}` : getBedrockModelId();
+}
+
 export function saveConfig(config: Partial<AppConfig>): void {
   const current = getConfig();
   const merged = { ...current, ...config };
