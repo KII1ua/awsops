@@ -103,7 +103,7 @@ else
 fi
 
 # Next.js
-HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/awsops 2>/dev/null)
+HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null)
 if [ "$HTTP" = "200" ]; then
     echo -e "  ${GREEN}OK${NC}  Next.js            port 3000  (HTTP 200)"
 else
@@ -111,7 +111,7 @@ else
 fi
 
 # Steampipe API via Next.js
-API=$(curl -s --max-time 5 -X POST http://localhost:3000/awsops/api/steampipe \
+API=$(curl -s --max-time 5 -X POST http://localhost:3000/api/steampipe \
     -H "Content-Type: application/json" \
     -d '{"queries":{"t":"SELECT 1 as ok"}}' 2>/dev/null)
 if echo "$API" | grep -q "ok"; then
@@ -134,7 +134,7 @@ echo ""
 echo -e "${CYAN}=================================================================${NC}"
 echo -e "${CYAN}   Access URLs${NC}"
 echo -e "${CYAN}=================================================================${NC}"
-echo "  Local:       http://localhost:3000/awsops"
+echo "  Local:       http://localhost:3000/"
 
 # Auto-detect Dashboard URL from CDK stack output (ALB + custom domain)
 DASHBOARD_URL=$(aws cloudformation describe-stacks \
