@@ -29,6 +29,8 @@ const TOKEN_PRICING: Record<string, { input: number; output: number }> = {
   'sonnet-4.6': { input: 3, output: 15 },
   'opus-4.6': { input: 15, output: 75 },
   'haiku-4.5': { input: 1, output: 5 },
+  'sonnet-4.5': { input: 3, output: 15 },
+  'opus-4.5': { input: 5, output: 25 },
 };
 
 function calcTokenCost(model: string, inputTokens: number, outputTokens: number): string {
