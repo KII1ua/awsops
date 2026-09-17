@@ -451,18 +451,27 @@ export class AwsopsStack extends cdk.Stack {
     if (!customDomain) {
       throw new Error('customDomain context is required (e.g. -c customDomain=awsops.dev1.musinsa.io) — ALB Cognito auth needs an HTTPS listener');
     }
-    const hostedZoneNameCtx = this.node.tryGetContext('hostedZoneName') as string | undefined;
-    // 'awsops.dev1.musinsa.io' → 'dev1.musinsa.io'
-    const zoneName = hostedZoneNameCtx || customDomain.split('.').slice(1).join('.');
-    const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-      domainName: zoneName,
-    });
+    // 외부 DNS(Route 53 호스팅 존 없음): 미리 발급한 인증서 ARN을 넘기면 존 조회·인증서·A 레코드를 건너뛴다
+    // External DNS (no Route 53 zone): -c certificateArn=arn:aws:acm:... skips zone lookup, cert and A record
+    const certificateArn = this.node.tryGetContext('certificateArn') as string | undefined;
+    let hostedZone: route53.IHostedZone | undefined;
+    let certificate: acm.ICertificate;
+    if (certificateArn) {
+      certificate = acm.Certificate.fromCertificateArn(this, 'Certificate', certificateArn);
+    } else {
+      const hostedZoneNameCtx = this.node.tryGetContext('hostedZoneName') as string | undefined;
+      // 'awsops.dev1.musinsa.io' → 'dev1.musinsa.io'
+      const zoneName = hostedZoneNameCtx || customDomain.split('.').slice(1).join('.');
+      hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
+        domainName: zoneName,
+      });
 
-    // ALB용 리전 인증서 (CloudFront 미사용 → us-east-1 불필요)
-    const certificate = new acm.Certificate(this, 'Certificate', {
-      domainName: customDomain,
-      validation: acm.CertificateValidation.fromDns(hostedZone),
-    });
+      // ALB용 리전 인증서 (CloudFront 미사용 → us-east-1 불필요)
+      certificate = new acm.Certificate(this, 'Certificate', {
+        domainName: customDomain,
+        validation: acm.CertificateValidation.fromDns(hostedZone),
+      });
+    }
 
     // nginx(8889)가 /vscode 접두사를 벗겨 code-server(8888)로 중계
     const vscodeTg = new elbv2.ApplicationTargetGroup(this, 'VSCodeProxyTargetGroup', {
@@ -548,13 +557,17 @@ export class AwsopsStack extends cdk.Stack {
     // -------------------------------------------------------
     // Route 53 A record (alias) — 커스텀 도메인 → ALB
     // -------------------------------------------------------
-    new route53.ARecord(this, 'DomainARecord', {
-      zone: hostedZone,
-      recordName: customDomain,
-      target: route53.RecordTarget.fromAlias(
-        new route53targets.LoadBalancerTarget(this.alb),
-      ),
-    });
+    if (hostedZone) {
+      new route53.ARecord(this, 'DomainARecord', {
+        zone: hostedZone,
+        recordName: customDomain,
+        target: route53.RecordTarget.fromAlias(
+          new route53targets.LoadBalancerTarget(this.alb),
+        ),
+      });
+    }
+    // 외부 DNS면 PublicALBEndpoint 출력값으로 CNAME을 직접 등록한다
+    // With external DNS, point a CNAME at the PublicALBEndpoint output yourself
 
     // -------------------------------------------------------
     // Outputs

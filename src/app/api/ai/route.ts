@@ -13,7 +13,7 @@ import {
   StopCodeInterpreterSessionCommand,
 } from '@aws-sdk/client-bedrock-agentcore';
 import { runQuery } from '@/lib/steampipe';
-import { getConfig, validateAccountId, getAccountById } from '@/lib/app-config';
+import { getConfig, validateAccountId, getAccountById, getBedrockModelId } from '@/lib/app-config';
 import { recordCall } from '@/lib/agentcore-stats';
 import { saveConversation } from '@/lib/agentcore-memory';
 import { getUserFromRequest } from '@/lib/auth-utils';
@@ -41,10 +41,11 @@ function getCodeInterpreterName(): string {
 // Available Bedrock models / 사용 가능한 Bedrock 모델
 // Seoul region uses global.* prefix for cross-region inference / 서울 리전은 global.* 접두사 사용
 // Opus 4.8 단일 모델 (레거시 키는 과거 요청 호환용) / single model; legacy keys kept for compatibility
+// getter로 매 요청마다 config(bedrockModelId)를 반영 / getters pick up config.bedrockModelId per request
 const MODELS: Record<string, string> = {
-  'opus-4.8': 'global.anthropic.claude-opus-4-8',
-  'sonnet-4.6': 'global.anthropic.claude-opus-4-8',
-  'opus-4.6': 'global.anthropic.claude-opus-4-8',
+  get 'opus-4.8'() { return getBedrockModelId(); },
+  get 'sonnet-4.6'() { return getBedrockModelId(); },
+  get 'opus-4.6'() { return getBedrockModelId(); },
 };
 
 // AWS SDK clients / AWS SDK 클라이언트

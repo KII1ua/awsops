@@ -65,7 +65,8 @@ GATEWAYS = _discover_gateways()
 
 # Bedrock Model / Bedrock 모델
 model = BedrockModel(
-    model_id="global.anthropic.claude-opus-4-8",
+    # 계정마다 접근 가능한 모델이 달라 환경변수로 교체 가능 / overridable per account
+    model_id=os.environ.get("BEDROCK_MODEL_ID", "global.anthropic.claude-opus-4-8"),
     region_name="ap-northeast-2",
 )
 

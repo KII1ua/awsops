@@ -83,6 +83,7 @@ export interface AppConfig {
   cognitoDomain?: string;             // Cognito hosted UI domain (e.g. "ops-dashboard-123.auth.ap-northeast-2.amazoncognito.com")
   cognitoClientId?: string;           // Cognito app client ID — used to build the logout URL
   appUrl?: string;                    // Public app URL, logout redirect target (e.g. "https://awsops.dev1.musinsa.io/")
+  bedrockModelId?: string;            // Bedrock model/inference-profile ID override — for accounts without access to the default / 기본 모델 접근 불가 계정용
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -112,6 +113,13 @@ export function getConfig(): AppConfig {
   } catch {
     return DEFAULT_CONFIG;
   }
+}
+
+// 계정마다 접근 가능한 Bedrock 모델이 달라 config로 교체 가능 / Model access differs per account, so it is overridable
+export const DEFAULT_BEDROCK_MODEL_ID = 'global.anthropic.claude-opus-4-8';
+
+export function getBedrockModelId(): string {
+  return getConfig().bedrockModelId || DEFAULT_BEDROCK_MODEL_ID;
 }
 
 export function saveConfig(config: Partial<AppConfig>): void {
