@@ -52,6 +52,9 @@ if [ "$(docker inspect -f '{{.State.Running}}' awsops-agent-smoke)" != "true" ];
     docker rm -f awsops-agent-smoke >/dev/null 2>&1
     exit 1
 fi
+# Gateway discovery result (informational: inside Docker on EC2 the IMDS hop limit can
+# block credentials, in which case discovery only succeeds on AgentCore itself).
+docker logs awsops-agent-smoke 2>&1 | grep -i "gateway" | head -3 | sed 's/^/  /'
 docker rm -f awsops-agent-smoke >/dev/null 2>&1
 echo -e "  ${GREEN}Container starts cleanly${NC}"
 
