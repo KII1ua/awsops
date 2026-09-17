@@ -720,38 +720,41 @@ export async function GET(request: NextRequest) {
     if (!meta) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 });
     }
-    if (meta.status !== 'completed' || !meta.s3KeyDocx) {
+    if (meta.status !== 'completed') {
       return NextResponse.json(
         { error: 'DOCX report not available' },
         { status: meta.status === 'failed' ? 410 : 202 },
       );
     }
 
-    try {
-      const date = new Date().toISOString().split('T')[0];
-      const freshUrl = await getSignedUrl(s3Client, new GetObjectCommand({
-        Bucket: getReportBucket(),
-        Key: meta.s3KeyDocx,
-        ResponseContentDisposition: `attachment; filename="AWSops_Report_${date}.docx"`,
-      }), { expiresIn: 60 * 60 });
-
-      return NextResponse.redirect(freshUrl, 302);
-    } catch {
-      // S3 presigned URL failed — fallback to local file
-      const localPath = path.join(REPORTS_META_DIR, `${id}.docx`);
-      if (fs.existsSync(localPath)) {
-        const buffer = fs.readFileSync(localPath);
+    // S3 key is null when no reportBucket is configured (or the upload failed) —
+    // the report is still saved locally, so fall through like download-md does.
+    if (meta.s3KeyDocx) {
+      try {
         const date = new Date().toISOString().split('T')[0];
-        return new NextResponse(buffer, {
-          headers: {
-            'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'Content-Disposition': `attachment; filename="AWSops_Report_${date}.docx"`,
-            'Content-Length': String(buffer.length),
-          },
-        });
-      }
-      return NextResponse.json({ error: 'DOCX file not available' }, { status: 500 });
+        const freshUrl = await getSignedUrl(s3Client, new GetObjectCommand({
+          Bucket: getReportBucket(),
+          Key: meta.s3KeyDocx,
+          ResponseContentDisposition: `attachment; filename="AWSops_Report_${date}.docx"`,
+        }), { expiresIn: 60 * 60 });
+
+        return NextResponse.redirect(freshUrl, 302);
+      } catch { /* fallback below */ }
     }
+
+    const localPath = path.join(REPORTS_META_DIR, `${id}.docx`);
+    if (fs.existsSync(localPath)) {
+      const buffer = fs.readFileSync(localPath);
+      const date = new Date().toISOString().split('T')[0];
+      return new NextResponse(buffer, {
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'Content-Disposition': `attachment; filename="AWSops_Report_${date}.docx"`,
+          'Content-Length': String(buffer.length),
+        },
+      });
+    }
+    return NextResponse.json({ error: 'DOCX file not available' }, { status: 500 });
   }
 
   // ── Download Markdown ──
