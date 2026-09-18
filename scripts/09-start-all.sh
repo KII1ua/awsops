@@ -34,7 +34,7 @@ echo -e "${CYAN}[1/2] Starting Steampipe service (port 9193)...${NC}"
 if [ -f /etc/systemd/system/steampipe.service ]; then
     sudo systemctl start steampipe.service
     echo -e "  ${GREEN}Started via systemd (steampipe.service)${NC}"
-elif steampipe service status 2>&1 | grep -q "running"; then
+elif steampipe service status 2>&1 | grep -q "is running"; then
     echo -e "  ${GREEN}Already running${NC}"
 else
     steampipe service stop --force 2>/dev/null || true
@@ -95,7 +95,7 @@ echo -e "${CYAN}   Service Status${NC}"
 echo -e "${CYAN}=================================================================${NC}"
 
 # Steampipe
-if steampipe service status 2>&1 | grep -q "running"; then
+if steampipe service status 2>&1 | grep -q "is running"; then
     SP_PW=$(steampipe service status --show-password 2>&1 | grep Password | awk '{print $2}')
     echo -e "  ${GREEN}OK${NC}  Steampipe          port 9193  (pw: ${SP_PW:0:4}****)"
 else
@@ -103,7 +103,7 @@ else
 fi
 
 # Next.js
-HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/awsops 2>/dev/null)
+HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null)
 if [ "$HTTP" = "200" ]; then
     echo -e "  ${GREEN}OK${NC}  Next.js            port 3000  (HTTP 200)"
 else
@@ -111,7 +111,7 @@ else
 fi
 
 # Steampipe API via Next.js
-API=$(curl -s --max-time 5 -X POST http://localhost:3000/awsops/api/steampipe \
+API=$(curl -s --max-time 5 -X POST http://localhost:3000/api/steampipe \
     -H "Content-Type: application/json" \
     -d '{"queries":{"t":"SELECT 1 as ok"}}' 2>/dev/null)
 if echo "$API" | grep -q "ok"; then
@@ -134,7 +134,7 @@ echo ""
 echo -e "${CYAN}=================================================================${NC}"
 echo -e "${CYAN}   Access URLs${NC}"
 echo -e "${CYAN}=================================================================${NC}"
-echo "  Local:       http://localhost:3000/awsops"
+echo "  Local:       http://localhost:3000/"
 
 # Auto-detect Dashboard URL from CDK stack output (ALB + custom domain)
 DASHBOARD_URL=$(aws cloudformation describe-stacks \
