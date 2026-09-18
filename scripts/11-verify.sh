@@ -50,7 +50,7 @@ check() {
 echo -e "${CYAN}[1/5] Services${NC}"
 
 # Steampipe
-SP=$(steampipe service status 2>&1 | grep -q "running" && echo "OK" || echo "NOT RUNNING")
+SP=$(steampipe service status 2>&1 | grep -q "is running" && echo "OK" || echo "NOT RUNNING")
 check "Steampipe service (port 9193)" "$SP"
 
 # Next.js

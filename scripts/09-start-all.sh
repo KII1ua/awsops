@@ -34,7 +34,7 @@ echo -e "${CYAN}[1/2] Starting Steampipe service (port 9193)...${NC}"
 if [ -f /etc/systemd/system/steampipe.service ]; then
     sudo systemctl start steampipe.service
     echo -e "  ${GREEN}Started via systemd (steampipe.service)${NC}"
-elif steampipe service status 2>&1 | grep -q "running"; then
+elif steampipe service status 2>&1 | grep -q "is running"; then
     echo -e "  ${GREEN}Already running${NC}"
 else
     steampipe service stop --force 2>/dev/null || true
@@ -95,7 +95,7 @@ echo -e "${CYAN}   Service Status${NC}"
 echo -e "${CYAN}=================================================================${NC}"
 
 # Steampipe
-if steampipe service status 2>&1 | grep -q "running"; then
+if steampipe service status 2>&1 | grep -q "is running"; then
     SP_PW=$(steampipe service status --show-password 2>&1 | grep Password | awk '{print $2}')
     echo -e "  ${GREEN}OK${NC}  Steampipe          port 9193  (pw: ${SP_PW:0:4}****)"
 else
